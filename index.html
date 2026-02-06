@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPTIMA TWIN - Industrial Machine Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #0f1419;
+            --bg-tertiary: #1a1f2e;
+            --accent-primary: #00d9ff;
+            --accent-secondary: #00ff88;
+            --accent-danger: #ff3366;
+            --accent-warning: #ffaa00;
+            --text-primary: #e8edf4;
+            --text-secondary: #8b95a8;
+            --border-color: #1e2936;
+            --glow-primary: rgba(0, 217, 255, 0.3);
+            --glow-secondary: rgba(0, 255, 136, 0.3);
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 20% 80%, rgba(0, 217, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 136, 0.05) 0%, transparent 50%);
+        }
+
+        .dashboard {
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px 35px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .controls-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            font-family: 'Rajdhani', sans-serif;
+            padding: 12px 28px;
+            border: 2px solid var(--accent-primary);
+            background: var(--bg-secondary);
+            color: var(--accent-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: var(--glow-primary);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .control-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .control-btn:hover {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px var(--glow-primary);
+            transform: translateY(-2px);
+        }
+
+        .control-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .control-btn.danger {
+            border-color: var(--accent-danger);
+            color: var(--accent-danger);
+        }
+
+        .control-btn.danger:hover {
+            background: var(--accent-danger);
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.3);
+        }
+
+        .control-btn.success {
+            border-color: var(--accent-secondary);
+            color: var(--accent-secondary);
+        }
+
+        .control-btn.success:hover {
+            background: var(--accent-secondary);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px var(--glow-secondary);
+        }
+
+        .control-btn.active {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px var(--glow-primary);
+        }
+
+        .machines-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .machine-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .machine-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .machine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .machine-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .machine-status {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .status-running {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-secondary);
+            border: 1px solid var(--accent-secondary);
+            box-shadow: 0 0 10px var(--glow-secondary);
+        }
+
+        .status-stopped {
+            background: rgba(139, 149, 168, 0.2);
+            color: var(--text-secondary);
+            border: 1px solid var(--text-secondary);
+        }
+
+        .status-warning {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--accent-warning);
+            border: 1px solid var(--accent-warning);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 280px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .metric-unit {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        .parameter-control {
+            margin-bottom: 15px;
+        }
+
+        .parameter-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .parameter-name {
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .parameter-value {
+            font-family: 'Orbitron', monospace;
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--glow-primary);
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px var(--glow-primary);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px var(--glow-primary);
+        }
+
+        .data-export {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .export-header {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: 1.5px;
+        }
+
+        .export-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            color: var(--accent-secondary);
+            font-weight: 700;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .timeline-viz {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .timeline-canvas {
+            width: 100%;
+            height: 120px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--accent-primary);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: rotate 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .machines-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>OPTIMA TWIN</h1>
+            <p>Industrial Digital Twin Simulation Platform - Physics-Based Training Data Generation</p>
+        </div>
+
+        <div class="controls-bar">
+            <button class="control-btn success" id="startAll"><span>▶ START ALL</span></button>
+            <button class="control-btn danger" id="stopAll"><span>■ STOP ALL</span></button>
+            <button class="control-btn" id="resetAll"><span>↻ RESET</span></button>
+            <button class="control-btn" id="exportJSON"><span>⬇ EXPORT JSON</span></button>
+            <button class="control-btn" id="exportCSV"><span>⬇ EXPORT CSV</span></button>
+            <button class="control-btn" id="streamData"><span>📡 LIVE STREAM</span></button>
+            <button class="control-btn" id="toggleSound"><span>🔊 SOUND ON</span></button>
+        </div>
+
+        <div class="machines-grid">
+            <!-- Machine 1 -->
+            <div class="machine-card" id="machine1-card">
+                <div class="machine-header">
+                    <h2 class="machine-title">M1 - ALPHA</h2>
+                    <div class="machine-status status-stopped" id="m1-status">STOPPED</div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="canvas-m1"></canvas>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-label">RPM</div>
+                        <div class="metric-value" id="m1-rpm">0<span class="metric-unit">rpm</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Torque</div>
+                        <div class="metric-value" id="m1-torque">0<span class="metric-unit">Nm</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Temperature</div>
+                        <div class="metric-value" id="m1-temp">25<span class="metric-unit">°C</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Vibration</div>
+                        <div class="metric-value" id="m1-vib">0<span class="metric-unit">mm/s</span></div>
+                    </div>
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Target Speed</span>
+                        <span class="parameter-value" id="m1-speed-val">1500 RPM</span>
+                    </div>
+                    <input type="range" id="m1-speed" min="0" max="3000" value="1500" step="50">
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Load Weight</span>
+                        <span class="parameter-value" id="m1-load-val">50 kg</span>
+                    </div>
+                    <input type="range" id="m1-load" min="0" max="100" value="50" step="5">
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Wear Level</span>
+                        <span class="parameter-value" id="m1-wear-val">0%</span>
+                    </div>
+                    <input type="range" id="m1-wear" min="0" max="100" value="0" step="1">
+                </div>
+            </div>
+
+            <!-- Machine 2 -->
+            <div class="machine-card" id="machine2-card">
+                <div class="machine-header">
+                    <h2 class="machine-title">M2 - BETA</h2>
+                    <div class="machine-status status-stopped" id="m2-status">STOPPED</div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="canvas-m2"></canvas>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-label">RPM</div>
+                        <div class="metric-value" id="m2-rpm">0<span class="metric-unit">rpm</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Torque</div>
+                        <div class="metric-value" id="m2-torque">0<span class="metric-unit">Nm</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Temperature</div>
+                        <div class="metric-value" id="m2-temp">25<span class="metric-unit">°C</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Vibration</div>
+                        <div class="metric-value" id="m2-vib">0<span class="metric-unit">mm/s</span></div>
+                    </div>
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Target Speed</span>
+                        <span class="parameter-value" id="m2-speed-val">1800 RPM</span>
+                    </div>
+                    <input type="range" id="m2-speed" min="0" max="3000" value="1800" step="50">
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Load Weight</span>
+                        <span class="parameter-value" id="m2-load-val">65 kg</span>
+                    </div>
+                    <input type="range" id="m2-load" min="0" max="100" value="65" step="5">
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Wear Level</span>
+                        <span class="parameter-value" id="m2-wear-val">15%</span>
+                    </div>
+                    <input type="range" id="m2-wear" min="0" max="100" value="15" step="1">
+                </div>
+            </div>
+
+            <!-- Machine 3 -->
+            <div class="machine-card" id="machine3-card">
+                <div class="machine-header">
+                    <h2 class="machine-title">M3 - GAMMA</h2>
+                    <div class="machine-status status-stopped" id="m3-status">STOPPED</div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="canvas-m3"></canvas>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-label">RPM</div>
+                        <div class="metric-value" id="m3-rpm">0<span class="metric-unit">rpm</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Torque</div>
+                        <div class="metric-value" id="m3-torque">0<span class="metric-unit">Nm</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Temperature</div>
+                        <div class="metric-value" id="m3-temp">25<span class="metric-unit">°C</span></div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Vibration</div>
+                        <div class="metric-value" id="m3-vib">0<span class="metric-unit">mm/s</span></div>
+                    </div>
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Target Speed</span>
+                        <span class="parameter-value" id="m3-speed-val">2100 RPM</span>
+                    </div>
+                    <input type="range" id="m3-speed" min="0" max="3000" value="2100" step="50">
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Load Weight</span>
+                        <span class="parameter-value" id="m3-load-val">40 kg</span>
+                    </div>
+                    <input type="range" id="m3-load" min="0" max="100" value="40" step="5">
+                </div>
+
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span class="parameter-name">Wear Level</span>
+                        <span class="parameter-value" id="m3-wear-val">30%</span>
+                    </div>
+                    <input type="range" id="m3-wear" min="0" max="100" value="30" step="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="data-export">
+            <h3 class="export-header">DATA GENERATION & EXPORT</h3>
+
+            <div class="export-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Data Points</div>
+                    <div class="stat-value" id="total-points">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Streaming Rate</div>
+                    <div class="stat-value" id="stream-rate">0<span
+                            style="font-size: 0.9rem; margin-left: 5px;">Hz</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Runtime</div>
+                    <div class="stat-value" id="runtime">00:00:00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Dataset Size</div>
+                    <div class="stat-value" id="dataset-size">0<span
+                            style="font-size: 0.9rem; margin-left: 5px;">MB</span></div>
+                </div>
+            </div>
+
+            <div class="timeline-viz">
+                <canvas id="timeline-canvas" class="timeline-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // PHYSICS ENGINE & DATA GENERATION
+        // ========================================
+
+        function clamp(v, min, max) {
+            return Math.max(min, Math.min(v, max));
+        }
+
+        function boundedNoise(range) {
+            return (Math.random() * 2 - 1) * range;
+        }
+
+
+        class IndustrialMotor {
+            constructor(id, name, targetSpeed, loadWeight, wearLevel) {
+                this.id = id;
+                this.name = name;
+                this.targetSpeed = targetSpeed;
+                this.commandedSpeed = targetSpeed;  // FIX 3: Target speed ramping
+                this.loadWeight = loadWeight;
+                this.wearLevel = wearLevel;
+                // ===== Physical Limits =====
+                this.maxRPM = 3000;
+                this.maxTorque = 200;
+                this.maxTemp = 120;
+                this.maxVibration = 12;   // mm/s realistic upper bound
+
+
+                // Real-time physics state
+                this.currentRPM = 0;
+                this.angularVelocity = 0;
+                this.torque = 0;
+                this.temperature = 25;
+                this.vibrationX = 0;
+                this.vibrationY = 0;
+                this.vibrationZ = 0;
+                this.powerConsumption = 0;
+                this.efficiency = 95;
+                this.bearingTemp = 25;
+                this.windingTemp = 25;
+                this.current = 0;
+                this.voltage = 0;
+                this.powerFactor = 0.85;
+                this.harmonicDistortion = 0;
+
+                // Degradation & wear
+                this.operatingHours = 0;
+                this.startStopCycles = 0;
+                this.bearingWear = 0;
+                this.insulationResistance = 100;
+
+                // Environmental
+                this.ambientTemp = 25;
+                this.humidity = 50;
+
+                // Control
+                this.isRunning = false;
+                this.rotation = 0;
+
+                // Data history
+                this.dataHistory = [];
+                this.maxHistorySize = 10000;
+            }
+
+            start() {
+                this.isRunning = true;
+                this.startStopCycles++;
+            }
+
+            stop() {
+                this.isRunning = false;
+            }
+
+            // Physics simulation with realistic behavior
+            update(deltaTimeRaw) {
+
+                const dt = Math.min(deltaTimeRaw, 0.05); // timestep safety
+
+                // FIX 3: Smooth target ramp (VFD behavior)
+                this.targetSpeed +=
+                    (this.commandedSpeed - this.targetSpeed) * 0.1;
+
+                /* ================= STOPPED ================= */
+                if (!this.isRunning) {
+                    this.currentRPM *= 0.94;
+                    this.angularVelocity *= 0.85;
+
+                    this.temperature = Math.max(
+                        this.ambientTemp,
+                        this.temperature - 0.4 * dt
+                    );
+
+                    this.vibrationX *= 0.8;
+                    this.vibrationY *= 0.8;
+                    this.vibrationZ *= 0.8;
+                    return;
+                }
+
+                /* ================= SPEED CONTROL ================= */
+                const kp = 0.08;
+                const damping = 0.2;
+
+                const speedError = this.targetSpeed - this.currentRPM;
+                const accel =
+                    kp * speedError -
+                    damping * this.angularVelocity;
+
+                this.angularVelocity += accel * dt;
+                this.currentRPM += this.angularVelocity * dt;
+
+                // FIX 2: Minimum control authority (break dead-zone)
+                if (Math.abs(speedError) > 50 && Math.abs(this.angularVelocity) < 1) {
+                    this.angularVelocity += Math.sign(speedError) * 5 * dt;
+                }
+
+                // FIX 1: Soft governor (not hard clamp)
+                const rpmLimit = this.maxRPM * (1 - this.wearLevel / 200);
+                if (this.currentRPM > rpmLimit) {
+                    this.currentRPM -= (this.currentRPM - rpmLimit) * 0.3;
+                }
+
+                /* ================= ROTATION ================= */
+                this.rotation += (this.currentRPM / 60) * 360 * dt;
+
+                /* ================= TORQUE ================= */
+                const loadFactor = this.loadWeight / 100;
+                const wearFactor = 1 + this.wearLevel / 100;
+
+                this.torque = clamp(
+                    150 * loadFactor * wearFactor * (1 + boundedNoise(0.02)),
+                    0,
+                    this.maxTorque
+                );
+
+                /* ================= POWER ================= */
+                const mechPower =
+                    (this.torque * this.currentRPM * 2 * Math.PI) / 60000;
+
+                this.efficiency = clamp(
+                    95 - this.wearLevel * 0.25,
+                    70,
+                    95
+                );
+
+                this.powerConsumption =
+                    mechPower / (this.efficiency / 100);
+
+                /* ================= ELECTRICAL ================= */
+                this.voltage = clamp(400 + boundedNoise(5), 380, 420);
+
+                this.current =
+                    (this.powerConsumption * 1000) /
+                    (Math.sqrt(3) * this.voltage * this.powerFactor);
+
+                this.current = clamp(this.current, 0, 400);
+
+                this.harmonicDistortion = clamp(
+                    2 + this.wearLevel * 0.08 + boundedNoise(0.3),
+                    1,
+                    12
+                );
+
+                /* ================= THERMAL ================= */
+                const heatGen =
+                    this.powerConsumption * (1 - this.efficiency / 100);
+
+                const heatLoss =
+                    (this.temperature - this.ambientTemp) * 0.12;
+
+                this.temperature += (heatGen - heatLoss) * dt;
+                this.temperature = clamp(
+                    this.temperature,
+                    this.ambientTemp,
+                    this.maxTemp
+                );
+
+                this.windingTemp = clamp(
+                    this.temperature + 10 + boundedNoise(2),
+                    this.temperature,
+                    this.maxTemp + 10
+                );
+
+                this.bearingTemp = clamp(
+                    this.temperature - 5 + boundedNoise(2),
+                    this.ambientTemp,
+                    this.maxTemp
+                );
+
+                /* ================= VIBRATION ================= */
+                const speedVib = (this.currentRPM / this.maxRPM) * 2;
+                const wearVib = (this.wearLevel / 100) * 6;
+                const loadVib = loadFactor * 2;
+
+                const vibMagnitude = clamp(
+                    speedVib + wearVib + loadVib + boundedNoise(0.3),
+                    0,
+                    this.maxVibration
+                );
+
+                // Distribute vibration across axes
+                this.vibrationX = vibMagnitude * (0.6 + boundedNoise(0.05));
+                this.vibrationY = vibMagnitude * (0.7 + boundedNoise(0.05));
+                this.vibrationZ = vibMagnitude * (0.5 + boundedNoise(0.05));
+
+                /* ================= DEGRADATION ================= */
+                this.operatingHours += dt / 3600;
+
+                this.bearingWear = clamp(
+                    this.wearLevel + this.operatingHours * 0.001,
+                    0,
+                    100
+                );
+
+                this.insulationResistance = clamp(
+                    100 - this.operatingHours * 0.01,
+                    20,
+                    100
+                );
+
+                /* ================= ENVIRONMENT ================= */
+                this.ambientTemp = 25 + Math.sin(Date.now() / 10000) * 3;
+                this.humidity = clamp(
+                    50 + Math.sin(Date.now() / 15000) * 10,
+                    30,
+                    80
+                );
+
+                /* ================= RECORD ================= */
+                this.recordDataPoint();
+            }
+
+
+            recordDataPoint() {
+                const timestamp = Date.now();
+                const dataPoint = {
+                    timestamp: timestamp,
+                    machineId: this.id,
+                    machineName: this.name,
+
+                    // Mechanical
+                    rpm: parseFloat(this.currentRPM.toFixed(2)),
+                    torque: parseFloat(this.torque.toFixed(2)),
+                    loadWeight: this.loadWeight,
+
+                    // Thermal
+                    motorTemp: parseFloat(this.temperature.toFixed(2)),
+                    windingTemp: parseFloat(this.windingTemp.toFixed(2)),
+                    bearingTemp: parseFloat(this.bearingTemp.toFixed(2)),
+                    ambientTemp: parseFloat(this.ambientTemp.toFixed(2)),
+
+                    // Vibration
+                    vibrationX: parseFloat(this.vibrationX.toFixed(3)),
+                    vibrationY: parseFloat(this.vibrationY.toFixed(3)),
+                    vibrationZ: parseFloat(this.vibrationZ.toFixed(3)),
+                    vibrationMagnitude: parseFloat(Math.sqrt(
+                        this.vibrationX ** 2 + this.vibrationY ** 2 + this.vibrationZ ** 2
+                    ).toFixed(3)),
+
+                    // Electrical
+                    voltage: parseFloat(this.voltage.toFixed(2)),
+                    current: parseFloat(this.current.toFixed(2)),
+                    powerConsumption: parseFloat(this.powerConsumption.toFixed(3)),
+                    powerFactor: parseFloat(this.powerFactor.toFixed(3)),
+                    harmonicDistortion: parseFloat(this.harmonicDistortion.toFixed(2)),
+
+                    // Operational
+                    efficiency: parseFloat(this.efficiency.toFixed(2)),
+                    operatingHours: parseFloat(this.operatingHours.toFixed(2)),
+                    startStopCycles: this.startStopCycles,
+
+                    // Degradation
+                    wearLevel: this.wearLevel,
+                    bearingWear: parseFloat(this.bearingWear.toFixed(2)),
+                    insulationResistance: parseFloat(this.insulationResistance.toFixed(2)),
+
+                    // Environmental
+                    humidity: parseFloat(this.humidity.toFixed(1)),
+
+                    // Status
+                    isRunning: this.isRunning
+                };
+
+                this.dataHistory.push(dataPoint);
+
+                // Limit history size
+                if (this.dataHistory.length > this.maxHistorySize) {
+                    this.dataHistory.shift();
+                }
+
+                return dataPoint;
+            }
+
+            getLatestData() {
+                return this.dataHistory[this.dataHistory.length - 1];
+            }
+
+            getAllData() {
+                return this.dataHistory;
+            }
+
+            clearHistory() {
+                this.dataHistory = [];
+            }
+        }
+
+        // ========================================
+        // 3D VISUALIZATION ENGINE
+        // ========================================
+
+        class MotorRenderer {
+            constructor(canvasId, motor) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.motor = motor;
+
+                // Set canvas size
+                this.canvas.width = this.canvas.offsetWidth * window.devicePixelRatio;
+                this.canvas.height = this.canvas.offsetHeight * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+                this.width = this.canvas.offsetWidth;
+                this.height = this.canvas.offsetHeight;
+
+                this.sparkles = [];
+            }
+
+            render() {
+                this.ctx.clearRect(0, 0, this.width, this.height);
+
+                const centerX = this.width / 2;
+                const centerY = this.height / 2;
+
+                // Background glow effect
+                if (this.motor.isRunning) {
+                    const gradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 120);
+                    gradient.addColorStop(0, 'rgba(0, 217, 255, 0.1)');
+                    gradient.addColorStop(1, 'transparent');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fillRect(0, 0, this.width, this.height);
+                }
+
+                // Motor base/housing
+                this.ctx.save();
+                this.ctx.translate(centerX, centerY);
+
+                // Housing (static)
+                this.ctx.fillStyle = '#1a1f2e';
+                this.ctx.strokeStyle = '#2d3748';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.rect(-80, -60, 160, 120);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                // Ventilation slots
+                for (let i = 0; i < 5; i++) {
+                    this.ctx.strokeStyle = '#0f1419';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(-70, -40 + i * 20);
+                    this.ctx.lineTo(-50, -40 + i * 20);
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(50, -40 + i * 20);
+                    this.ctx.lineTo(70, -40 + i * 20);
+                    this.ctx.stroke();
+                }
+
+                // Rotating shaft
+                this.ctx.save();
+                this.ctx.rotate((this.motor.rotation * Math.PI) / 180);
+
+                // Shaft
+                this.ctx.fillStyle = '#4a5568';
+                this.ctx.fillRect(-10, -5, 20, 10);
+
+                // Rotor blades/fan
+                for (let i = 0; i < 6; i++) {
+                    this.ctx.save();
+                    this.ctx.rotate((i * 60 * Math.PI) / 180);
+
+                    // Blade
+                    const speedFactor = Math.min(1, this.motor.currentRPM / 3000);
+                    const bladeLength = 40 + speedFactor * 20;
+
+                    // Gradient for motion blur effect
+                    const bladeGradient = this.ctx.createLinearGradient(0, 0, bladeLength, 0);
+                    bladeGradient.addColorStop(0, '#00d9ff');
+                    bladeGradient.addColorStop(0.5, '#00ff88');
+                    bladeGradient.addColorStop(1, 'rgba(0, 255, 136, 0.2)');
+
+                    this.ctx.fillStyle = this.motor.isRunning ? bladeGradient : '#2d3748';
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, 0);
+                    this.ctx.lineTo(bladeLength, -8);
+                    this.ctx.lineTo(bladeLength, 8);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+
+                    // Glow effect when running
+                    if (this.motor.isRunning && speedFactor > 0.5) {
+                        this.ctx.strokeStyle = 'rgba(0, 217, 255, 0.6)';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.stroke();
+                    }
+
+                    this.ctx.restore();
+                }
+
+                // Center hub
+                const hubGradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, 15);
+                hubGradient.addColorStop(0, '#4a5568');
+                hubGradient.addColorStop(1, '#2d3748');
+                this.ctx.fillStyle = hubGradient;
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, 15, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                if (this.motor.isRunning) {
+                    this.ctx.strokeStyle = '#00d9ff';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+
+                this.ctx.restore(); // End rotation
+
+                // Status indicators
+                const indicatorY = 70;
+
+                // Power indicator
+                this.ctx.fillStyle = this.motor.isRunning ? '#00ff88' : '#4a5568';
+                this.ctx.beginPath();
+                this.ctx.arc(-30, indicatorY, 5, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                if (this.motor.isRunning) {
+                    this.ctx.shadowColor = '#00ff88';
+                    this.ctx.shadowBlur = 10;
+                    this.ctx.fill();
+                    this.ctx.shadowBlur = 0;
+                }
+
+                // Temperature indicator
+                const tempColor = this.motor.temperature > 80 ? '#ff3366' :
+                    this.motor.temperature > 60 ? '#ffaa00' : '#00d9ff';
+                this.ctx.fillStyle = tempColor;
+                this.ctx.beginPath();
+                this.ctx.arc(0, indicatorY, 5, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // Vibration indicator
+                const vibLevel = Math.sqrt(this.motor.vibrationX ** 2 + this.motor.vibrationY ** 2 + this.motor.vibrationZ ** 2);
+                const vibColor = vibLevel > 8 ? '#ff3366' : vibLevel > 4 ? '#ffaa00' : '#00d9ff';
+                this.ctx.fillStyle = vibColor;
+                this.ctx.beginPath();
+                this.ctx.arc(30, indicatorY, 5, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // Sparkle effect for high-speed operation
+                if (this.motor.isRunning && this.motor.currentRPM > 2000) {
+                    if (Math.random() < 0.1) {
+                        this.sparkles.push({
+                            x: (Math.random() - 0.5) * 100,
+                            y: (Math.random() - 0.5) * 100,
+                            life: 1,
+                            size: Math.random() * 3 + 1
+                        });
+                    }
+
+                    this.sparkles.forEach((sparkle, idx) => {
+                        sparkle.life -= 0.02;
+                        if (sparkle.life <= 0) {
+                            this.sparkles.splice(idx, 1);
+                            return;
+                        }
+
+                        this.ctx.fillStyle = `rgba(0, 217, 255, ${sparkle.life})`;
+                        this.ctx.beginPath();
+                        this.ctx.arc(sparkle.x, sparkle.y, sparkle.size, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    });
+                }
+
+                this.ctx.restore();
+            }
+        }
+
+        // ========================================
+        // TIMELINE VISUALIZATION
+        // ========================================
+
+        class TimelineRenderer {
+            constructor() {
+                this.canvas = document.getElementById('timeline-canvas');
+                this.ctx = this.canvas.getContext('2d');
+
+                this.canvas.width = this.canvas.offsetWidth * window.devicePixelRatio;
+                this.canvas.height = this.canvas.offsetHeight * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+                this.width = this.canvas.offsetWidth;
+                this.height = this.canvas.offsetHeight;
+
+                this.dataPoints = {
+                    m1: [],
+                    m2: [],
+                    m3: []
+                };
+                this.maxPoints = 100;
+            }
+
+            addDataPoint(machineId, value) {
+                this.dataPoints[machineId].push(value);
+                if (this.dataPoints[machineId].length > this.maxPoints) {
+                    this.dataPoints[machineId].shift();
+                }
+            }
+
+            render() {
+                this.ctx.clearRect(0, 0, this.width, this.height);
+
+                const colors = {
+                    m1: '#00d9ff',
+                    m2: '#00ff88',
+                    m3: '#ff3366'
+                };
+
+                Object.keys(this.dataPoints).forEach(machineId => {
+                    const data = this.dataPoints[machineId];
+                    if (data.length < 2) return;
+
+                    this.ctx.strokeStyle = colors[machineId];
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+
+                    data.forEach((value, idx) => {
+                        const x = (idx / this.maxPoints) * this.width;
+                        const y = this.height - (value / 3000) * this.height;
+
+                        if (idx === 0) {
+                            this.ctx.moveTo(x, y);
+                        } else {
+                            this.ctx.lineTo(x, y);
+                        }
+                    });
+
+                    this.ctx.stroke();
+                });
+
+                // Grid lines
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                this.ctx.lineWidth = 1;
+                for (let i = 0; i <= 4; i++) {
+                    const y = (i / 4) * this.height;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.width, y);
+                    this.ctx.stroke();
+                }
+            }
+        }
+
+
+        // ========================================
+        // AUDIO SYNTHESIS ENGINE
+        // ========================================
+
+        class AudioSystem {
+            constructor() {
+                this.ctx = null;
+                this.masterGain = null;
+                this.isMuted = false;
+                this.initialized = false;
+            }
+
+            init() {
+                if (this.initialized) return;
+
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.3; // Master volume
+                this.masterGain.connect(this.ctx.destination);
+
+                this.initialized = true;
+            }
+
+            toggleMute() {
+                if (!this.initialized) this.init();
+
+                this.isMuted = !this.isMuted;
+
+                if (this.isMuted) {
+                    this.masterGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+                    if (this.ctx.state === 'running') {
+                        this.ctx.suspend();
+                    }
+                } else {
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                    this.masterGain.gain.setTargetAtTime(0.3, this.ctx.currentTime, 0.1);
+                }
+
+                return this.isMuted;
+            }
+
+            resume() {
+                if (this.initialized && this.ctx.state === 'suspended' && !this.isMuted) {
+                    this.ctx.resume();
+                }
+            }
+        }
+
+        class MachineSound {
+            constructor(audioSystem, motor) {
+                this.audioSystem = audioSystem;
+                this.motor = motor;
+                this.nodes = {};
+                this.isPlaying = false;
+            }
+
+            setup() {
+                if (!this.audioSystem.initialized) return;
+
+                const ctx = this.audioSystem.ctx;
+
+                // 1. Low Engine Hum (Triangle Wave)
+                // Represents the core rotation
+                const humOsc = ctx.createOscillator();
+                humOsc.type = 'triangle';
+                const humGain = ctx.createGain();
+                humGain.gain.value = 0;
+                humOsc.connect(humGain);
+                humGain.connect(this.audioSystem.masterGain);
+
+                // 2. High Whine (Sawtooth Wave)
+                // Represents electrical whine / bearings
+                const whineOsc = ctx.createOscillator();
+                whineOsc.type = 'sawtooth';
+                const whineGain = ctx.createGain();
+                whineGain.gain.value = 0;
+                whineOsc.connect(whineGain);
+                whineGain.connect(this.audioSystem.masterGain);
+
+                // 3. Mechanical Noise (Buffer Source)
+                // Represents vibrations and friction
+                const bufferSize = ctx.sampleRate * 2; // 2 seconds of noise
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noiseSrc = ctx.createBufferSource();
+                noiseSrc.buffer = buffer;
+                noiseSrc.loop = true;
+
+                const noiseFilter = ctx.createBiquadFilter();
+                noiseFilter.type = 'lowpass';
+
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.value = 0;
+
+                noiseSrc.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(this.audioSystem.masterGain);
+
+                this.nodes = {
+                    humOsc, humGain,
+                    whineOsc, whineGain,
+                    noiseSrc, noiseFilter, noiseGain
+                };
+
+                humOsc.start();
+                whineOsc.start();
+                noiseSrc.start();
+
+                this.isPlaying = true;
+            }
+
+            update() {
+                // Initialize on first update if needed (requires user gesture first usually)
+                if (!this.audioSystem.initialized) return;
+                if (!this.isPlaying) this.setup();
+
+                const ctx = this.audioSystem.ctx;
+                const rpm = Math.abs(this.motor.currentRPM);
+                const load = this.motor.loadWeight / 100;
+                const wear = this.motor.wearLevel / 100;
+                const vib = Math.sqrt(this.motor.vibrationX ** 2 + this.motor.vibrationY ** 2);
+
+                // Base frequency from RPM (min 20Hz to avoid DC offset issues)
+                // 1500 RPM / 60 = 25 Hz. Let's scale it for better audibility.
+                const baseFreq = Math.max(20, (rpm / 60) * 2);
+
+                // --- UPDATE PARAMETERS with smooth transitions ---
+                const now = ctx.currentTime;
+                const rampTime = 0.1;
+
+                // 1. Hum Logic
+                this.nodes.humOsc.frequency.setTargetAtTime(baseFreq, now, rampTime);
+
+                // Volume based on speed + load
+                // If stopped (RPM < 10), silence it
+                let targetHumVol = (rpm > 10) ? 0.3 + (load * 0.2) : 0;
+                if (!this.motor.isRunning && rpm < 50) targetHumVol = 0;
+
+                this.nodes.humGain.gain.setTargetAtTime(targetHumVol, now, rampTime);
+
+                // 2. Whine Logic
+                // Higher harmonic, pitch rises with speed
+                this.nodes.whineOsc.frequency.setTargetAtTime(baseFreq * 8, now, rampTime);
+
+                // Whine gets louder with speed and WEAR
+                let targetWhineVol = (rpm > 100) ? (0.05 + (wear * 0.1) + (rpm / 3000 * 0.1)) : 0;
+                if (!this.motor.isRunning && rpm < 50) targetWhineVol = 0;
+
+                this.nodes.whineGain.gain.setTargetAtTime(targetWhineVol, now, rampTime);
+
+                // 3. Noise Logic (Vibration)
+                // Filter cutoff follows RPM
+                this.nodes.noiseFilter.frequency.setTargetAtTime(100 + (rpm * 0.5), now, rampTime);
+
+                // Noise volume follows vibration metric
+                let targetNoiseVol = (vib * 0.05) + (wear * 0.05);
+                if (rpm < 50) targetNoiseVol = 0;
+
+                this.nodes.noiseGain.gain.setTargetAtTime(targetNoiseVol, now, rampTime);
+            }
+        }
+
+        // ========================================
+        // MAIN APPLICATION
+        // ========================================
+
+        // Initialize motors
+        const motors = {
+            m1: new IndustrialMotor('m1', 'M1-ALPHA', 1500, 50, 0),
+            m2: new IndustrialMotor('m2', 'M2-BETA', 1800, 65, 15),
+            m3: new IndustrialMotor('m3', 'M3-GAMMA', 2100, 40, 30)
+        };
+
+        // Initialize renderers
+        const renderers = {
+            m1: new MotorRenderer('canvas-m1', motors.m1),
+            m2: new MotorRenderer('canvas-m2', motors.m2),
+            m3: new MotorRenderer('canvas-m3', motors.m3)
+        };
+
+        const timeline = new TimelineRenderer();
+
+        // Initialize Audio
+        const audioSystem = new AudioSystem();
+        const machineSounds = {
+            m1: new MachineSound(audioSystem, motors.m1),
+            m2: new MachineSound(audioSystem, motors.m2),
+            m3: new MachineSound(audioSystem, motors.m3)
+        };
+
+        // Runtime tracking
+        let startTime = null;
+        let totalDataPoints = 0;
+        let isStreaming = false;
+
+        // Parameter controls
+        ['m1', 'm2', 'm3'].forEach(id => {
+            document.getElementById(`${id}-speed`).addEventListener('input', (e) => {
+                motors[id].commandedSpeed = parseInt(e.target.value);  // FIX 3: Use commandedSpeed
+                document.getElementById(`${id}-speed-val`).textContent = `${e.target.value} RPM`;
+            });
+
+            document.getElementById(`${id}-load`).addEventListener('input', (e) => {
+                motors[id].loadWeight = parseInt(e.target.value);
+                document.getElementById(`${id}-load-val`).textContent = `${e.target.value} kg`;
+            });
+
+            document.getElementById(`${id}-wear`).addEventListener('input', (e) => {
+                motors[id].wearLevel = parseInt(e.target.value);
+                document.getElementById(`${id}-wear-val`).textContent = `${e.target.value}%`;
+            });
+        });
+
+        // Control buttons
+        document.getElementById('startAll').addEventListener('click', () => {
+            // Audio policy: requires user gesture to init/resume
+            if (!audioSystem.initialized) audioSystem.init();
+            audioSystem.resume();
+
+            Object.values(motors).forEach(motor => motor.start());
+            if (!startTime) startTime = Date.now();
+            updateStatus();
+        });
+
+        document.getElementById('stopAll').addEventListener('click', () => {
+            Object.values(motors).forEach(motor => motor.stop());
+            updateStatus();
+        });
+
+        document.getElementById('resetAll').addEventListener('click', () => {
+            Object.values(motors).forEach(motor => {
+                motor.stop();
+                motor.currentRPM = 0;
+                motor.temperature = 25;
+                motor.operatingHours = 0;
+                motor.clearHistory();
+            });
+            totalDataPoints = 0;
+            startTime = null;
+            updateStatus();
+        });
+
+        document.getElementById('exportJSON').addEventListener('click', exportJSON);
+        document.getElementById('exportCSV').addEventListener('click', exportCSV);
+
+        document.getElementById('streamData').addEventListener('click', () => {
+            isStreaming = !isStreaming;
+            const btn = document.getElementById('streamData');
+            btn.classList.toggle('active');
+            if (isStreaming) {
+                btn.innerHTML = '<span>📡 STREAMING...</span>';
+            } else {
+                btn.innerHTML = '<span>📡 LIVE STREAM</span>';
+            }
+        });
+
+        document.getElementById('toggleSound').addEventListener('click', () => {
+            // Ensure init on first click if not already done
+            if (!audioSystem.initialized) audioSystem.init();
+
+            const isMuted = audioSystem.toggleMute();
+            const btn = document.getElementById('toggleSound');
+
+            if (isMuted) {
+                btn.innerHTML = '<span>🔇 SOUND OFF</span>';
+                btn.classList.add('danger');
+            } else {
+                btn.innerHTML = '<span>🔊 SOUND ON</span>';
+                btn.classList.remove('danger');
+            }
+        });
+
+        // Export functions
+        function exportJSON() {
+            const allData = {
+                exportTime: new Date().toISOString(),
+                totalDataPoints: totalDataPoints,
+                runtime: startTime ? (Date.now() - startTime) / 1000 : 0,
+                machines: {
+                    m1: motors.m1.getAllData(),
+                    m2: motors.m2.getAllData(),
+                    m3: motors.m3.getAllData()
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `digital-twin-data-${Date.now()}.json`;
+            a.click();
+        }
+
+        function exportCSV() {
+            const headers = [
+                'timestamp', 'machineId', 'machineName', 'rpm', 'torque', 'loadWeight',
+                'motorTemp', 'windingTemp', 'bearingTemp', 'ambientTemp',
+                'vibrationX', 'vibrationY', 'vibrationZ', 'vibrationMagnitude',
+                'voltage', 'current', 'powerConsumption', 'powerFactor', 'harmonicDistortion',
+                'efficiency', 'operatingHours', 'startStopCycles',
+                'wearLevel', 'bearingWear', 'insulationResistance', 'humidity', 'isRunning'
+            ];
+
+            let csv = headers.join(',') + '\n';
+
+            Object.values(motors).forEach(motor => {
+                motor.getAllData().forEach(dataPoint => {
+                    const row = headers.map(header => dataPoint[header]).join(',');
+                    csv += row + '\n';
+                });
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `digital-twin-data-${Date.now()}.csv`;
+            a.click();
+        }
+
+        // Update UI
+        function updateStatus() {
+            ['m1', 'm2', 'm3'].forEach(id => {
+                const motor = motors[id];
+                const statusEl = document.getElementById(`${id}-status`);
+
+                if (motor.isRunning) {
+                    statusEl.textContent = 'RUNNING';
+                    statusEl.className = 'machine-status status-running';
+                } else {
+                    statusEl.textContent = 'STOPPED';
+                    statusEl.className = 'machine-status status-stopped';
+                }
+
+                // Update metrics
+                document.getElementById(`${id}-rpm`).innerHTML =
+                    `${Math.round(motor.currentRPM)}<span class="metric-unit">rpm</span>`;
+                document.getElementById(`${id}-torque`).innerHTML =
+                    `${motor.torque.toFixed(1)}<span class="metric-unit">Nm</span>`;
+                document.getElementById(`${id}-temp`).innerHTML =
+                    `${Math.round(motor.temperature)}<span class="metric-unit">°C</span>`;
+                const vibMag = Math.sqrt(motor.vibrationX ** 2 + motor.vibrationY ** 2 + motor.vibrationZ ** 2);
+                document.getElementById(`${id}-vib`).innerHTML =
+                    `${vibMag.toFixed(1)}<span class="metric-unit">mm/s</span>`;
+
+                // Warning status
+                if (motor.temperature > 80 || vibMag > 8) {
+                    statusEl.textContent = 'WARNING';
+                    statusEl.className = 'machine-status status-warning';
+                }
+            });
+
+            // Update export stats
+            document.getElementById('total-points').textContent = totalDataPoints;
+
+            if (startTime) {
+                const runtime = Math.floor((Date.now() - startTime) / 1000);
+                const hours = Math.floor(runtime / 3600);
+                const minutes = Math.floor((runtime % 3600) / 60);
+                const seconds = runtime % 60;
+                document.getElementById('runtime').textContent =
+                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+
+            const dataSize = (JSON.stringify({
+                m1: motors.m1.getAllData(),
+                m2: motors.m2.getAllData(),
+                m3: motors.m3.getAllData()
+            }).length / (1024 * 1024)).toFixed(2);
+            document.getElementById('dataset-size').textContent =
+                `${dataSize}`;
+
+            document.getElementById('stream-rate').innerHTML =
+                `${isStreaming ? '10' : '0'}<span style="font-size: 0.9rem; margin-left: 5px;">Hz</span>`;
+        }
+
+        // Main animation loop
+        let lastTime = Date.now();
+        function animate() {
+            const currentTime = Date.now();
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            // Update physics
+            Object.values(motors).forEach(motor => {
+                motor.update(deltaTime);
+                if (motor.isRunning) totalDataPoints++;
+            });
+
+            // Render 3D
+            Object.values(renderers).forEach(renderer => renderer.render());
+
+            // Update timeline
+            timeline.addDataPoint('m1', motors.m1.currentRPM);
+            timeline.addDataPoint('m2', motors.m2.currentRPM);
+            timeline.addDataPoint('m3', motors.m3.currentRPM);
+            timeline.render();
+
+            // Update UI
+            updateStatus();
+
+            // Update Sound
+            if (audioSystem.initialized) {
+                Object.values(machineSounds).forEach(sound => sound.update());
+            }
+
+            // Stream data if enabled
+            if (isStreaming) {
+                // In real implementation, send to WebSocket or HTTP endpoint
+                console.log('Streaming data:', {
+                    m1: motors.m1.getLatestData(),
+                    m2: motors.m2.getLatestData(),
+                    m3: motors.m3.getLatestData()
+                });
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+
+        // Initial UI update
+        updateStatus();
+    </script>
+</body>
+
+</html>

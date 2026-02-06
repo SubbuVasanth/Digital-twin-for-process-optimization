@@ -1,0 +1,28 @@
+# Data handling
+numpy
+pandas
+scipy
+
+# Machine Learning (PdM)
+scikit-learn
+xgboost
+joblib
+
+# Optimization & math
+scipy
+cvxpy
+
+# Visualization (optional dashboard)
+matplotlib
+seaborn
+streamlit
+
+# API (for PdM → Digital Twin)
+fastapi
+uvicorn
+
+# Experiment tracking (optional but good)
+mlflow
+
+# Utilities
+pyyaml
